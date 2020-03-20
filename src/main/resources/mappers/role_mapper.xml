@@ -1,0 +1,323 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.exa.vuespringboot.dao.IRoleMapper">
+    <resultMap id="roleResultMap" type="com.exa.vuespringboot.entity.RoleEntity">
+        <id column="id" property="id" jdbcType="INTEGER"/>
+        <result column="name" property="name" jdbcType="VARCHAR"/>
+        <result column="bacs_data_auth" property="bacsDataAuth" jdbcType="INTEGER"/>
+        <result column="sacw_data_auth" property="sacwDataAuth" jdbcType="INTEGER"/>
+        <result column="jzgl_data_auth" property="jzglDataAuth" jdbcType="INTEGER"/>
+        <result column="jxkp_data_auth" property="jxkpDataAuth" jdbcType="INTEGER"/>
+        <result column="sla_data_auth" property="slaDataAuth" jdbcType="INTEGER"/>
+        <result column="zhgl_data_auth" property="zhglDataAuth" jdbcType="INTEGER"/>
+        <result column="bacs_configure" property="bacsConfigure" jdbcType="INTEGER"/>
+        <result column="sacw_configure" property="sacwConfigure" jdbcType="INTEGER"/>
+        <result column="jzgl_configure" property="jzglConfigure" jdbcType="INTEGER"/>
+        <result column="jxkp_configure" property="jxkpConfigure" jdbcType="INTEGER"/>
+        <result column="sla_configure" property="slaConfigure" jdbcType="INTEGER"/>
+        <result column="xt_configure" property="xtConfigure" jdbcType="INTEGER"/>
+        <result column="description" property="description" jdbcType="VARCHAR"/>
+        <result column="created_time" property="createdTime" jdbcType="TIMESTAMP"/>
+        <result column="updated_time" property="updatedTime" jdbcType="TIMESTAMP"/>
+        <result column="op_pid" property="op_Pid" jdbcType="VARCHAR" />
+        <result column="op_user_id" property="op_User_Id" jdbcType="INTEGER" />
+    </resultMap>
+
+    <resultMap id="roleAuthorityResultMap" type="com.exa.vuespringboot.entity.RoleAuthorityEntity">
+        <id column="role_id" property="roleId" jdbcType="INTEGER"/>
+        <id column="authority_id" property="authorityId" jdbcType="INTEGER"/>
+    </resultMap>
+
+    <sql id="role_Column_List">
+    id, name, bacs_data_auth,sacw_data_auth,jzgl_data_auth, jxkp_data_auth,sla_data_auth,zhgl_data_auth,bacs_configure,sacw_configure,jzgl_configure,jxkp_configure,sla_configure,xt_configure,description, created_time, updated_time
+  </sql>
+    <!-- 根据id查询角色 -->
+    <select id="getRoleByID" resultMap="roleResultMap" parameterType="java.lang.Integer" >
+        select
+        <include refid="role_Column_List" />
+        from xt_role
+        where id = #{id,jdbcType=INTEGER}
+    </select>
+    <!-- 查询所有用户的权限 -->
+    <select id="getAllRoleAuthority" resultMap="roleAuthorityResultMap">
+    select * from xt_role_authority
+  </select>
+
+    <!-- 计算查询结果大小 -->
+    <select id="count" resultType="java.lang.Integer" parameterType="java.util.Map">
+        select count(1) from xt_role
+        <where>
+            <if test="id != null and id != ''">
+                and id like '%${id}%'
+            </if>
+            <if test="name != null and name != ''">
+                and name like '%${name}%'
+            </if>
+            <if test="start_date != null and start_date != ''">
+                and created_time &gt;=#{start_date}
+            </if>
+            <if test="end_date != null and end_date != ''">
+                and created_time &lt;=#{end_date}
+            </if>
+        </where>
+    </select>
+
+    <!-- 模糊匹配查询角色 -->
+    <select id="getRolesByLike" resultMap="roleResultMap" parameterType="java.util.Map" >
+        select
+        <include refid="role_Column_List" />
+        from xt_role
+        <where>
+            1=1
+            <if test="id != null and id != ''">
+                and id like '%${id}%'
+            </if>
+            <if test="name != null and name != ''">
+                and name like '%${name}%'
+            </if>
+            <if test="start_date != null and start_date != ''">
+                and created_time &gt;=#{start_date}
+            </if>
+            <if test="end_date != null and end_date != ''">
+                and created_time &lt;=#{end_date}
+            </if>
+            <if test="dataAuth!=null and dataAuth!=''">
+                and ${dataAuth}
+            </if>
+        </where>
+        order by id asc
+        limit ${pageStart},${rows}
+    </select>
+
+    <!-- 根据用户id获取用户角色信息 -->
+    <select id="getUserRolesByUserID" resultMap="roleResultMap" parameterType="java.lang.Integer">
+    select * from xt_role r
+    left join xt_user u on r.id = u.role_id
+    where u.id = #{userID}
+    </select>
+
+    <!-- 根据用户id获取用户角色信息 -->
+    <select id="getUserRolesByUserIDMap" resultMap="roleResultMap" parameterType="java.util.Map">
+        	select r.* from xt_role r ,xt_user xu where  r.id = xu.role_id and xu.id = #{id,jdbcType=INTEGER}
+        	limit ${pageStart},${rows}
+    </select>
+    <select id="getAllRoleImport" resultMap="roleResultMap" parameterType="java.util.Map">
+        	select * from xt_role 
+    </select>
+
+    <!-- 获取所有用户信息 -->
+    <select id="getAllRolesByMap" resultMap="roleResultMap" parameterType="java.util.Map">
+        select
+        <include refid="role_Column_List"/>
+        from xt_role
+        limit ${pageStart},${rows}
+    </select>
+
+    <!-- 获取所有用户信息 -->
+    <select id="getAllRoles" resultMap="roleResultMap">
+        select
+        <include refid="role_Column_List"/>
+        from xt_role
+        <!-- limit ${pageStart},${rows}  -->
+    </select>
+
+    <!-- 删除角色 -->
+    <delete id="deleteRoleByID" parameterType="java.lang.Integer">
+    delete from xt_role
+    where id = #{id,jdbcType=INTEGER}
+    </delete>
+
+    <!-- 添加角色 -->
+    <insert id="insertRole" parameterType="RoleEntity">
+    insert into xt_role ( name, bacs_data_auth,sacw_data_auth, jzgl_data_auth,jxkp_data_auth,sla_data_auth,zhgl_data_auth,bacs_configure,sacw_configure,jzgl_configure,jxkp_configure,sla_configure,xt_configure, description, created_time,op_pid,op_user_id )
+           values ( #{name,jdbcType=VARCHAR},#{bacsDataAuth,jdbcType=INTEGER},#{sacwDataAuth,jdbcType=INTEGER},#{jzglDataAuth,jdbcType=INTEGER},#{jxkpDataAuth,jdbcType=INTEGER},#{slaDataAuth,jdbcType=INTEGER},#{zhglDataAuth,jdbcType=INTEGER},#{bacsConfigure,jdbcType=INTEGER},#{sacwConfigure,jdbcType=INTEGER},#{jzglConfigure,jdbcType=INTEGER},#{jxkpConfigure,jdbcType=INTEGER},#{slaConfigure,jdbcType=INTEGER},#{xtConfigure,jdbcType=INTEGER}, #{description,jdbcType=VARCHAR}, now(),#{op_Pid,jdbcType=VARCHAR},#{op_User_Id,jdbcType=INTEGER})
+    </insert>
+
+    <!-- 根据id更新角色信息 -->
+    <update id="updateRoleByID" parameterType="RoleEntity">
+    update xt_role
+    set name = #{name,jdbcType=VARCHAR},
+        bacs_data_auth = #{bacsDataAuth,jdbcType=INTEGER},
+        sacw_data_auth = #{sacwDataAuth,jdbcType=INTEGER},
+        jzgl_data_auth = #{jzglDataAuth,jdbcType=INTEGER},
+        jxkp_data_auth = #{jxkpDataAuth,jdbcType=INTEGER},
+        sla_data_auth = #{slaDataAuth,jdbcType=INTEGER},
+        zhgl_data_auth = #{zhglDataAuth,jdbcType=INTEGER},
+        bacs_configure = #{bacsConfigure,jdbcType=INTEGER},
+        sacw_configure = #{sacwConfigure,jdbcType=INTEGER},
+        jzgl_configure = #{jzglConfigure,jdbcType=INTEGER},
+        jxkp_configure = #{jxkpConfigure,jdbcType=INTEGER},
+        sla_configure = #{slaConfigure,jdbcType=INTEGER},
+        xt_configure = #{xtConfigure,jdbcType=INTEGER},
+        description = #{description,jdbcType=VARCHAR},
+        updated_time = now()
+    where id = #{id,jdbcType=INTEGER}
+    </update>
+
+    <!-- 判空添加角色 -->
+    <insert id="insertSelectiveRole" parameterType="RoleEntity">
+        insert into xt_role
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="id != null">
+                id,
+            </if>
+            <if test="name != null">
+                name,
+            </if>
+            <if test="bacsDataAuth != null">
+                bacs_data_auth,
+            </if>
+            <if test="sacwDataAuth != null">
+                sacw_data_auth,
+            </if>
+            <if test="jzglDataAuth != null">
+                jzgl_data_auth,
+            </if>
+            <if test="jxkpDataAuth != null">
+                jxkp_data_auth,
+            </if>
+            <if test="slaDataAuth != null">
+                sla_data_auth,
+            </if>
+            <if test="zhglDataAuth != null">
+                zhgl_data_auth,
+            </if>
+            <if test="bacsConfigure != null">
+                bacs_configure,
+            </if>
+            <if test="sacwConfigure != null">
+                sacw_configure,
+            </if>
+            <if test="jzglConfigure != null">
+                jzgl_configure,
+            </if>
+            <if test="jxkpConfigure != null">
+                jxkp_configure,
+            </if>
+            <if test="slaConfigure != null">
+                sla_configure,
+            </if>
+            <if test="xtConfigure != null">
+                xt_configure,
+            </if>
+            <if test="description != null">
+                description,
+            </if>
+            <if test="createdTime != null">
+                created_time,
+            </if>
+            <if test="updatedTime != null">
+                updated_time,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="id != null">
+                #{id,jdbcType=INTEGER},
+            </if>
+            <if test="name != null">
+                #{name,jdbcType=VARCHAR},
+            </if>
+            <if test="bacsDataAuth != null">
+                data_auth = #{bacsDataAuth},
+            </if>
+            <if test="sacwDataAuth != null">
+                inv_data_auth = #{sacwDataAuth},
+            </if>
+            <if test="jzglDataAuth != null">
+                jz_data_auth = #{jzglDataAuth},
+            </if>
+            <if test="jxkpDataAuth != null">
+                kp_data_auth = #{jxkpDataAuth},
+            </if>
+            <if test="slaDataAuth != null">
+                sla_data_auth = #{slaDataAuth},
+            </if>
+            <if test="zhglDataAuth != null">
+                zhgl_data_auth= #{zhglDataAuth},
+            </if>
+            <if test="bacsConfigure != null">
+                bacs_configure= #{bacsConfigure},
+            </if>
+            <if test="sacwConfigure != null">
+                sacw_configure= #{sacwConfigure},
+            </if>
+            <if test="jzglConfigure != null">
+                jzgl_configure= #{jzglConfigure},
+            </if>
+            <if test="jxkpConfigure != null">
+                jxkp_configure= #{jxkpConfigure},
+            </if>
+            <if test="slaConfigure != null">
+                sla_configure= #{slaConfigure},
+            </if>
+            <if test="xtConfigure != null">
+                xt_configure= #{xtConfigure},
+            </if>
+            <if test="description != null">
+                #{description,jdbcType=VARCHAR},
+            </if>
+            <if test="createdTime != null">
+                #{createdTime,jdbcType=TIMESTAMP},
+            </if>
+            <if test="updatedTime != null">
+                #{updatedTime,jdbcType=TIMESTAMP},
+            </if>
+        </trim>
+    </insert>
+
+    <!-- 判空根据id更新角色信息  -->
+    <update id="updateSelectiveRoleByID" parameterType="RoleEntity">
+        update xt_role
+        <set>
+            <if test="name != null">
+                name = #{name,jdbcType=VARCHAR},
+            </if>
+            <if test="bacsDataAuth != null">
+                bacs_data_auth = #{bacsDataAuth},
+            </if>
+            <if test="sacwDataAuth != null">
+                sacw_data_auth = #{sacwDataAuth},
+            </if>
+            <if test="jzglDataAuth != null">
+                jzgl_data_auth = #{jzglDataAuth},
+            </if>
+            <if test="jxkpDataAuth != null">
+                jxkp_data_auth = #{jxkpDataAuth},
+            </if>
+            <if test="slaDataAuth != null">
+                sla_data_auth = #{slaDataAuth},
+            </if>
+            <if test="zhglDataAuth != null">
+                zhgl_data_auth= #{zhglDataAuth},
+            </if>
+            <if test="bacsConfigure != null">
+                bacs_configure= #{bacsConfigure},
+            </if>
+            <if test="sacwConfigure != null">
+                sacw_configure= #{sacwConfigure},
+            </if>
+            <if test="jzglConfigure != null">
+                jzgl_configure= #{jzglConfigure},
+            </if>
+            <if test="jxkpConfigure != null">
+                jxkp_configure= #{jxkpConfigure},
+            </if>
+            <if test="slaConfigure != null">
+                sla_configure= #{slaConfigure},
+            </if>
+            <if test="xtConfigure != null">
+                xt_configure= #{xtConfigure},
+            </if>
+            <if test="description != null">
+                description = #{description},
+            </if>
+            <if test="createdTime != null">
+                created_time = #{createdTime,jdbcType=TIMESTAMP},
+            </if>
+            <if test="updatedTime != null">
+                updated_time = #{updatedTime,jdbcType=TIMESTAMP},
+            </if>
+        </set>
+        where id = #{id,jdbcType=INTEGER}
+    </update>
+</mapper>

@@ -1,0 +1,409 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.exa.vuespringboot.dao.IAuthorityMapper">
+
+    <resultMap id="authorityResultMap" type="com.exa.vuespringboot.entity.AuthorityEntity">
+        <id property="id" column="ID"/>
+        <result property="title" column="TITLE"/>
+        <result property="englishTitle" column="ENGLISH_TITLE"/>
+        <result property="description" column="DESCRIPTION"/>
+        <result property="type" column="AUTHORITY_TYPE"/>
+        <result property="parentId" column="PARENT_ID"/>
+        <result property="rootId" column="ROOT_ID"/>
+        <result property="sortNumber" column="SORT_NUMBER"/>
+        <result property="url" column="URL"/>
+        <result property="jsMethod" column="JS_METHOD"/>
+        <result property="icon" column="ICON"/>
+        <result property="bigIcon" column="big_icon"/>
+        <result property="smallIcon" column="small_icon"/>
+        <result property="authorityId" column="id"/>
+
+        <result property="moduleName"  column="module_name"></result>
+        <result property="namespace" column="namespace"></result>
+        <result property="imageName" column="image_name"></result>
+    </resultMap>
+
+    <resultMap id="userAuth" type="com.exa.vuespringboot.entity.UserAuthorityEntity">
+        <result property="userId" column="userid"/>
+        <result property="authId" column="authId"/>
+    </resultMap>
+
+    <!-- 根据父类id查询所有权限 -->
+    <select id="listAuthority" resultMap="authorityResultMap">
+        SELECT * FROM xt_authority order by parent_id,id
+    </select>
+
+    <!-- 添加页面查询树结构 -->
+    <select id="listAuthorityData" resultMap="authorityResultMap" parameterType="java.lang.Integer">
+        SELECT * FROM xt_authority a WHERE 1=1
+        <!-- <if test="id == 5">
+             and a.authority_type =2
+         </if>
+         <if test="id == 6">
+             and a.authority_type =0
+         </if>-->
+    </select>
+
+
+    <!-- 查询非代办事项的所有权限 -->
+    <select id="listAuthorityNotHide" resultMap="authorityResultMap">
+        SELECT id,CONCAT(title,IFNULL(description,''))title,english_title,description,authority_type,parent_id,root_id,sort_number,url,js_method,icon,big_icon,small_icon FROM xt_authority where authority_type !=5
+    </select>
+
+    <!-- 查询cs角色的所有权限 -->
+    <select id="listCsAuthorityNotHide" resultMap="authorityResultMap">
+        SELECT
+            id,
+            CONCAT(
+                title,
+                IFNULL(description, '')
+            ) title,
+            parent_id,
+          module_name,
+            description,
+            authority_type,
+          sort_number,
+          namespace,
+          image_name
+        FROM
+            xt_authority_cs
+        WHERE
+            authority_type != 5
+    </select>
+
+    <!-- 根据角色id查询该角色权限id -->
+    <select id="queryAuthorityIdsByRole" resultType="java.lang.Long" parameterType="java.lang.Long">
+        select ra.authority_id from xt_role_authority ra where ra.role_id = #{roleId}
+    </select>
+
+    <!-- 根据cs角色id查询该cs角色权限id -->
+    <select id="queryAuthorityCsIdsByRole" resultType="java.lang.Long" parameterType="java.lang.Long">
+        select ra.authority_id from xt_role_authority_cs ra where ra.role_id = #{roleId}
+    </select>
+
+
+    <!--  删除角色的权限  -->
+    <delete id="delAuthorityByRole" parameterType="java.lang.Long">
+        delete from xt_role_authority where role_id = #{roleId}
+    </delete>
+
+    <!-- 增加角色权限  -->
+    <insert id="batchInsertRoleAuthortity" parameterType="java.util.List">
+        insert into xt_role_authority
+        VALUES
+        <foreach collection="list" item="map" separator=",">
+            (#{map.roleId}, #{map.authorityId})
+        </foreach>
+    </insert>
+
+    <!--  删除cs角色的权限  -->
+    <delete id="delAuthorityCsByRole" parameterType="java.lang.Long">
+        delete from xt_role_authority_cs where role_id = #{roleId}
+    </delete>
+
+    <!-- 增加cs角色权限  -->
+    <insert id="batchInsertRoleAuthorityCs" parameterType="java.util.List">
+        insert into xt_role_authority_cs
+        VALUES
+        <foreach collection="list" item="map" separator=",">
+            (#{map.roleId}, #{map.authorityId})
+        </foreach>
+    </insert>
+
+
+
+    <!-- 添加权限 -->
+    <insert id="insertSelective" parameterType="AuthorityEntity" >
+        insert into xt_authority
+        <trim prefix="(" suffix=")" suffixOverrides="," >
+            <if test="id != null" >
+                id,
+            </if>
+            <if test="title != null" >
+                title,
+            </if>
+            <if test="englishTitle != null" >
+                english_title,
+            </if>
+            <if test="description != null" >
+                description,
+            </if>
+            <if test="type != null" >
+                authority_type,
+            </if>
+            <if test="parentId != null" >
+                parent_id,
+            </if>
+            <if test="rootId != null" >
+                root_id,
+            </if>
+            <if test="sortNumber != null" >
+                sort_number,
+            </if>
+            <if test="url != null" >
+                url,
+            </if>
+            <if test="jsMethod != null" >
+                js_method,
+            </if>
+            <if test="icon != null" >
+                icon,
+            </if>
+            <if test="bigIcon != null" >
+                big_icon,
+            </if>
+            <if test="smallIcon != null" >
+                small_icon,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides="," >
+            <if test="id != null" >
+                #{id,jdbcType=INTEGER},
+            </if>
+            <if test="title != null" >
+                #{title,jdbcType=VARCHAR},
+            </if>
+            <if test="englishTitle != null" >
+                #{englishTitle,jdbcType=VARCHAR},
+            </if>
+            <if test="description != null" >
+                #{description,jdbcType=VARCHAR},
+            </if>
+            <if test="type != null" >
+                #{type,jdbcType=INTEGER},
+            </if>
+            <if test="parentId != null" >
+                #{parentId,jdbcType=INTEGER},
+            </if>
+            <if test="rootId != null" >
+                #{rootId,jdbcType=INTEGER},
+            </if>
+            <if test="sortNumber != null" >
+                #{sortNumber,jdbcType=INTEGER},
+            </if>
+            <if test="url != null" >
+                #{url,jdbcType=VARCHAR},
+            </if>
+            <if test="jsMethod != null" >
+                #{jsMethod,jdbcType=VARCHAR},
+            </if>
+            <if test="icon != null" >
+                #{icon,jdbcType=VARCHAR},
+            </if>
+            <if test="bigIcon != null" >
+                #{bigIcon,jdbcType=VARCHAR},
+            </if>
+            <if test="smallIcon != null" >
+                #{smallIcon,jdbcType=VARCHAR},
+            </if>
+        </trim>
+    </insert>
+
+    <!-- 添加页面查询树结构 -->
+    <select id="listAuthorityDataByForm" resultMap="authorityResultMap" parameterType="com.exa.vuespringboot.form.AuthorityForm">
+        SELECT *  FROM xt_authority a WHERE 1=1
+        <!--
+      <if test="id != 5 and  id != 6" >
+        and  a.authority_type NOT IN (2)
+         </if>
+          -->
+        <if test="id == 5" >
+            and  a.authority_type =2
+        </if>
+        <if test="id == 6" >
+            and  a.authority_type =0
+        </if>
+    </select>
+
+    <!-- 根据id查询rootid  -->
+    <select id="queryRootid" resultMap="authorityResultMap">
+       SELECT a.root_id  as rootId FROM xt_authority a WHERE a.id=#{parentId}
+    </select>
+
+    <!-- 查询root最大权限 -->
+    <select id="queryMaxRootId" resultType="java.lang.Integer">
+	         SELECT max(a.root_id) as rootId   FROM xt_authority a
+	 </select>
+
+    <!-- 根据父类id删除权限 -->
+    <delete id="delete" parameterType="int">
+		DELETE FROM xt_authority WHERE parent_id=#{longID}
+	</delete>
+
+    <!-- 根据id删除单个权限  -->
+    <delete id="deleteSelf" parameterType="int">
+		DELETE FROM xt_authority WHERE id=#{longID}
+	</delete>
+
+    <!-- 根据权限id删除角色权限 -->
+    <delete id="deleteRoleAuthority" parameterType="int">
+		DELETE FROM xt_role_authority  WHERE authority_id =#{longID}
+	</delete>
+
+    <!-- 修改权限 -->
+    <update id="updateByPrimaryKeySelective" parameterType="AuthorityEntity" >
+        update xt_authority
+        <set >
+            <if test="title != null" >
+                title = #{title,jdbcType=VARCHAR},
+            </if>
+            <if test="englishTitle != null" >
+                english_title = #{englishTitle,jdbcType=VARCHAR},
+            </if>
+            <if test="description != null" >
+                description = #{description,jdbcType=VARCHAR},
+            </if>
+            <if test="type != null" >
+                authority_type = #{type,jdbcType=INTEGER},
+            </if>
+            <if test="parentId != null" >
+                parent_id = #{parentId,jdbcType=INTEGER},
+            </if>
+            <if test="rootId != null" >
+                root_id = #{rootId,jdbcType=INTEGER},
+            </if>
+            <if test="sortNumber != null" >
+                sort_number = #{sortNumber,jdbcType=INTEGER},
+            </if>
+            <if test="url != null" >
+                url = #{url,jdbcType=VARCHAR},
+            </if>
+            <if test="jsMethod != null" >
+                js_method = #{jsMethod,jdbcType=VARCHAR},
+            </if>
+            <if test="icon != null" >
+                icon = #{icon,jdbcType=VARCHAR},
+            </if>
+            <if test="bigIcon != null" >
+                big_icon=#{bigIcon,jdbcType=VARCHAR},
+            </if>
+            <if test="smallIcon != null" >
+                small_icon=#{smallIcon,jdbcType=VARCHAR},
+            </if>
+        </set>
+        where id = #{id,jdbcType=INTEGER}
+    </update>
+
+    <!-- 查询非代办事项的单个用户权限 -->
+    <select id="queryByUserId" parameterType="java.lang.Long" resultMap="authorityResultMap">
+        SELECT DISTINCT
+            a.*
+        FROM
+            xt_authority a,
+            xt_user u,
+            xt_role_authority ra
+        WHERE
+            u.role_id = ra.role_id
+        AND a.id = ra.authority_id
+        AND u.id = #{userId}/* and a.authority_type!=5*/
+    </select>
+
+    <!-- 查询菜单  -->
+    <select id="getlistMenu" resultMap="authorityResultMap">
+            SELECT
+                  a.id,
+                  a.title,
+                  a.url,
+                  a.parent_id,
+                  a.root_id
+            FROM
+                xt_user u
+            INNER JOIN xt_role_authority ra ON u.role_id = ra.role_id
+            LEFT JOIN xt_authority a ON a.id = ra.authority_id
+            WHERE
+                u.id = #{userId} AND a.parent_id IS null
+    </select>
+
+    <!-- 根据父类id和rootid查询权限 -->
+    <select id="listAuthorityById" resultMap="authorityResultMap" parameterType="java.lang.Long">
+            SELECT * FROM xt_authority WHERE root_id=#{pid} AND parent_id  IS NOT null and parent_id=#{pid}
+    </select>
+
+    <!-- 查询待办事项 -->
+    <!--    <select id="listHideUrlByPid" resultType="java.lang.String" parameterType="java.lang.Long">
+            select url from authority where parent_id = #{pid} and authority_type=5
+        </select>-->
+
+    <!-- 查询所有用户权限 -->
+    <select id="listAllUserAuth" resultMap="userAuth">
+	     SELECT DISTINCT
+	            u.id AS userId,
+	            a.id AS authId
+         FROM
+	            xt_authority a,
+	            xt_user u,
+                xt_role r,
+                xt_role_authority ra
+         WHERE
+                u.role_id = r.id AND r.id = ra.role_id AND ra.authority_id = a.id
+         ORDER BY
+	            u.id,
+	            a.id
+    </select>
+
+    <!--查询权限附加菜单 -->
+    <select id="listAuthorityExtraMenu" resultMap="authorityResultMap">
+        	SELECT * FROM xt_authority where parent_id=1 and authority_type=7 order by parent_id,id
+    </select>
+
+    <resultMap id="BaseResultMap" type="AreaEntity">
+        <id column="id" property="id" jdbcType="INTEGER"/>
+        <result column="name" property="name" jdbcType="VARCHAR"/>
+        <result column="type" property="type" jdbcType="VARCHAR"/>
+        <result column="description" property="description" jdbcType="VARCHAR"/>
+        <result column="organization_id" property="organizationId" jdbcType="INTEGER"/>
+        <result column="address" property="address" jdbcType="VARCHAR"/>
+        <result column="telephone" property="telephone" jdbcType="VARCHAR"/>
+        <result column="postcode" property="postcode" jdbcType="VARCHAR"/>
+        <result column="created_time" property="createdTime" jdbcType="TIMESTAMP"/>
+        <result column="updated_time" property="updatedTime" jdbcType="TIMESTAMP"/>
+        <result column="organization_name" property="organizationName"/>
+    </resultMap>
+    <!-- 查询上级部门及下级所有办案中心 -->
+    <select id="getALLAreaByParentOrg" resultMap="BaseResultMap" parameterType="java.lang.Integer">
+       SELECT
+	         ia.*
+       FROM
+	         ba_area ia
+       LEFT JOIN xt_organization o ON o.id = ia.organization_id
+       WHERE
+	         o.parent_id = #{parent_org_id}
+    </select>
+
+    <!-- 根据id查询所有权限 -->
+    <select id="queryAuthorityById" resultMap="authorityResultMap">
+        select * from xt_authority where id = #{id}
+    </select>
+
+    <!-- 查询上级部门到下级所有民警信息 -->
+    <select id="getALLPoliceByParentOrg" resultType="UserEntity" parameterType="java.util.Map">
+       SELECT
+	          u.id
+       FROM
+	          xt_user u
+       LEFT JOIN xt_organization o ON o.id = u.organization_id
+       WHERE
+	          o.id ${orgId}
+    </select>
+
+    <!-- 查询上级单位 -->
+    <select id="getParentOrgByUserId" resultType="java.lang.Integer" parameterType="java.lang.Integer">
+       SELECT
+	          o.parent_id
+       FROM
+	          xt_organization o
+       LEFT JOIN xt_user xu ON o.id = xu.organization_id
+       WHERE
+	          xu.id = #{userId}
+    </select>
+
+    <!-- 查询上级部门及下级所有部门 -->
+    <select id="getALLOrgByParentOrg" resultType="OrganizationEntity" parameterType="java.lang.Integer">
+       SELECT
+	        *
+       FROM
+	        xt_organization
+       WHERE
+	        parent_id = #{parent_org_id}
+    </select>
+</mapper>

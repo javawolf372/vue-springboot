@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.exa.vuespringboot.dao.IAreaMapper" >
+  <resultMap id="BaseResultMap" type="com.exa.vuespringboot.entity.AreaEntity" >
+    <id column="id" property="id" jdbcType="INTEGER" />
+    <result column="name" property="name" jdbcType="VARCHAR" />
+    <result column="type" property="type" jdbcType="VARCHAR" />
+    <result column="description" property="description" jdbcType="VARCHAR" />
+    <result column="organization_id" property="organizationId" jdbcType="INTEGER" />
+    <result column="address" property="address" jdbcType="VARCHAR" />
+    <result column="telephone" property="telephone" jdbcType="VARCHAR" />
+    <result column="postcode" property="postcode" jdbcType="VARCHAR" />
+      <result column="geo_coord" property="geoCoord" jdbcType="VARCHAR" />
+    <result column="created_time" property="createdTime" jdbcType="TIMESTAMP" />
+    <result column="updated_time" property="updatedTime" jdbcType="TIMESTAMP" />
+    <result column="organizationName" property="organizationName"/>
+      <result column="op_pid" property="op_Pid" jdbcType="VARCHAR" />
+      <result column="op_user_id" property="op_User_Id" jdbcType="INTEGER" />
+  </resultMap>
+ <select id="listAllArea" resultMap="BaseResultMap" parameterType="java.util.Map">
+		<!-- no ";" at the end -->
+		select ia.id id,ia.`name` name,ia.type type,ia.description description,ia.address address,ia.telephone telephone,ia.postcode postcode,ia.created_time created_time,ia.updated_time  updated_time
+			,o.name  organizationName ,ia.organization_id
+        from ba_area ia left join xt_organization o on ia.organization_id=o.id
+         where 1=1 
+         <if test="dataAuth!=null and dataAuth!=''">
+			and ${dataAuth}
+		 </if>
+		<if test="name!=null and name!=''">
+			and ia.name like '%${name}%'
+		</if>
+		<if test="type!=null and type!=''">
+			and ia.type ='${type}'
+		</if>
+       <if test="pageStart!=null and pageStart!='' and rows!=null and rows!=''">
+            limit ${pageStart},${rows}
+       </if>
+	</select>
+  <select id="count" resultType="java.lang.Integer" parameterType="java.util.Map">
+    		select count(1)   from ba_area ia left join xt_organization o on ia.organization_id=o.id
+    		<where>
+            1=1
+    		<if test="dataAuth!=null and dataAuth!=''">
+				and ${dataAuth}
+		    </if>
+	        <if test="name!=null and name!=''">
+				and ia.name like '%${name}%'
+		    </if>
+		    <if test="type!=null and type!=''">
+				and ia.type ='${type}'
+		    </if>
+			</where>
+    </select>
+	<select id="getAreaById" resultMap="BaseResultMap" parameterType="Long">
+		select ia.* ,o.name  organization_name
+        from ba_area ia left join xt_organization o on ia.organization_id=o.id
+         where ia.id = #{id}
+	</select>
+
+	<insert id="insertArea" parameterType="com.exa.vuespringboot.entity.AreaEntity" keyProperty="id" useGeneratedKeys="true">
+		insert into ba_area (id, name, type,
+      description, organization_id, address, 
+      telephone, postcode, created_time, 
+      updated_time,op_pid,op_user_id)
+    values (#{id,jdbcType=INTEGER}, #{name,jdbcType=VARCHAR}, #{type,jdbcType=VARCHAR}, 
+      #{description,jdbcType=VARCHAR}, #{organizationId,jdbcType=INTEGER}, #{address,jdbcType=VARCHAR}, 
+      #{telephone,jdbcType=VARCHAR}, #{postcode,jdbcType=VARCHAR}, #{createdTime,jdbcType=TIMESTAMP}, 
+      #{updatedTime,jdbcType=TIMESTAMP},#{op_Pid,jdbcType=VARCHAR},#{op_User_Id,jdbcType=INTEGER})
+	</insert>
+
+	<update id="updateArea" parameterType="com.exa.vuespringboot.entity.AreaEntity">
+		 update ba_area
+      set name = #{name,jdbcType=VARCHAR},
+      type = #{type,jdbcType=VARCHAR},
+      description = #{description,jdbcType=VARCHAR},
+      organization_id = #{organizationId,jdbcType=INTEGER},
+      address = #{address,jdbcType=VARCHAR},
+      telephone = #{telephone,jdbcType=VARCHAR},
+      postcode = #{postcode,jdbcType=VARCHAR},
+      created_time = #{createdTime,jdbcType=TIMESTAMP},
+      updated_time = #{updatedTime,jdbcType=TIMESTAMP}
+    where id = #{id}
+	</update>
+
+	<delete id="deleteArea" parameterType="Long">
+		DELETE a,b FROM ba_area a,ba_room b WHERE a.id=b.area_id AND a.id=#{id}
+	</delete>
+    <delete id="deleteAreaOnly" parameterType="Long">
+        DELETE a FROM ba_area a WHERE  a.id=#{id}
+    </delete>
+
+    <select id="listAreaByOrgStr" parameterType="java.util.Map" resultMap="BaseResultMap">
+        select * from ba_area where organization_id in (${orgStr})
+    </select>
+
+
+    <select id="get" resultMap="BaseResultMap" parameterType="java.util.Map">
+		select ia.* ,o.name  organization_name
+        from ba_area ia left join xt_organization o on ia.organization_id=o.id
+         where ia.id = #{id}
+	</select>
+
+
+</mapper>

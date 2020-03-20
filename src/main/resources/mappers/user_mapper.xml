@@ -1,0 +1,636 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.exa.vuespringboot.dao.IUserMapper">
+
+	<resultMap id="userResultMap" type="com.exa.vuespringboot.entity.UserEntity">
+		<id column="id" property="id" jdbcType="INTEGER" />
+		<result column="login_name" property="loginName" jdbcType="VARCHAR" />
+		<result column="real_name" property="realName" jdbcType="VARCHAR" />
+		<result column="password" property="password" jdbcType="VARCHAR" />
+		<result column="job_title" property="jobTitle" jdbcType="VARCHAR" />
+		<result column="mobile" property="mobile" jdbcType="VARCHAR" />
+		<result column="email" property="email" jdbcType="VARCHAR" />
+		<result column="certificate_type_id" property="certificateTypeId"
+			jdbcType="INTEGER" />
+		<result column="certificate_no" property="certificateNo"
+			jdbcType="VARCHAR" />
+		<result column="sex" property="sex" jdbcType="INTEGER" />
+		<result column="is_active" property="isActive" jdbcType="INTEGER" />
+		<result column="description" property="description" jdbcType="VARCHAR" />
+		<result column="p_id" property="pId" jdbcType="VARCHAR" />
+		<result column="identity" property="identity" jdbcType="VARCHAR" />
+		<result column="created_time" property="createdTime" jdbcType="TIMESTAMP" />
+		<result column="updated_time" property="updatedTime" jdbcType="TIMESTAMP" />
+		<result column="certificate_name" property="certificateName"
+			jdbcType="VARCHAR" />
+		<result column="organization_name" property="organizationName"
+			jdbcType="VARCHAR" />
+		<result column="organization_type" property="organizationType"
+			jdbcType="VARCHAR" />
+		<result column="organization_id" property="organizationId"
+			jdbcType="VARCHAR" />
+		<result column="role_id" property="roleId" jdbcType="VARCHAR" />
+		<result column="type" property="type" jdbcType="INTEGER" />
+		<result column="op_pid" property="op_Pid" jdbcType="VARCHAR" />
+		<result column="op_user_id" property="op_User_Id" jdbcType="INTEGER" />
+	</resultMap>
+
+	<sql id="user_Column_List">
+		id, login_name, real_name, password, mobile,job_title,
+		certificate_type_id, certificate_no, sex, is_active, description, created_time,
+		updated_time, organization_id, role_id
+	</sql>
+<!-- 获取所有用户信息 -->
+	<select id="queryUserByGlzongdui" resultMap="userResultMap">
+		select
+			*
+		from xt_user u
+		where  u.description ='管理中队'
+	</select>
+	<!-- 获取所有用户信息 -->
+	<select id="getAllUsers" resultMap="userResultMap">
+		select
+		<include refid="user_Column_List" />
+		,
+		(select name from xt_organization where id = u.organization_id)
+		organization_name
+		from xt_user u
+	</select>
+
+	<!-- 根据login_name和password获取用户信息 -->
+	<select id="getUserByLoginNameAndPassword" resultMap="userResultMap"
+		parameterType="java.util.Map">
+		select
+		<include refid="user_Column_List" />
+		,
+		(select name from xt_organization where id = u.organization_id)
+		organization_name,
+		(SELECT code_value FROM xt_code WHERE  TYPE='ZJZLID' AND code_key =u.certificate_type_id) certificate_name
+		from xt_user u
+		where login_name = #{loginName,jdbcType=VARCHAR} and password=
+		#{password,jdbcType=VARCHAR}
+	</select>
+
+	<!-- 根据部门id获取所有用户信息 -->
+	<select id="getUsersByOrgId" resultMap="userResultMap"
+		parameterType="java.lang.Long">
+		select
+		<include refid="user_Column_List" />
+		from xt_user
+		where organization_id = #{organizationId}
+	</select>
+	<!-- 根据获取用户信息（包含单位信息、证件信息） -->
+	<select id="getUserInfo" resultMap="userResultMap"
+		parameterType="java.util.Map">
+		SELECT
+		u.*, org.`name` organization_name,
+		xc.code_value certificate_name,
+		org.id AS organizationId,
+		org.p_id
+		FROM
+		xt_user u
+
+		LEFT JOIN xt_role r ON u.role_id = r.id
+		LEFT JOIN xt_organization org ON org.id = u.organization_id
+		LEFT JOIN xt_code xc ON xc.code_key= u.certificate_type_id
+		LEFT JOIN ba_area ia on ia.organization_id = org.id
+
+		WHERE
+		1 = 1
+		and u.type is not null
+		<if test="dataAuth !=null and dataAuth !=''">
+			and ${dataAuth}
+		</if>
+		<if test="login_name != null and login_name != ''">
+			and u.login_name like '%${login_name}%'
+		</if>
+		<if test="real_name != null and real_name != ''">
+			and u.real_name like '%${real_name}%'
+		</if>
+		<if test="job_title != null and job_title != ''">
+			and u.job_title like '%${job_title}%'
+		</if>
+		<if test="mobile != null and mobile != ''">
+			and u.mobile like '%${mobile}%'
+		</if>
+		<if test="certificate_type_id != null and certificate_type_id != ''">
+			and u.certificate_type_id like '%${certificate_type_id}%'
+		</if>
+		<if test="certificate_no != null and certificate_no != ''">
+			and u.certificate_no like '%${certificate_no}%'
+		</if>
+		<if test="organization_name != null and organization_name != ''">
+			and org.name like '%${organization_name}%'
+		</if>
+		<if test="organization_type != null and organization_type != ''">
+			and org.type like '%${organization_type}%'
+		</if>
+		<if test="is_active != null and is_active != ''">
+			and u.is_active like '%${isActive}%'
+		</if>
+		<if test="start_date!=null and start_date!=''">
+			and u.created_time &gt;=#{start_date}
+		</if>
+		<if test="end_date!=null and end_date!=''">
+			and u.created_time &lt;=#{end_date}
+		</if>
+		<if test="role!=null and role !=''">
+			and r.id = #{role}
+		</if>
+		GROUP BY u.id
+		order by created_time desc
+		limit ${pageStart},${rows}
+	</select>
+
+	<!-- 根据获取用户信息（包含单位信息、证件信息）大小 -->
+	<select id="count" resultType="java.lang.Integer" parameterType="java.util.Map">
+		SELECT
+		count(DISTINCT(u.id)) count
+		FROM
+		xt_user u
+		LEFT JOIN xt_role r ON u.role_id = r.id
+		LEFT JOIN xt_organization org ON org.id = u.organization_id
+		LEFT JOIN xt_code xc ON xc.code_key= u.certificate_type_id
+		LEFT JOIN ba_area ia on ia.organization_id = org.id
+		<where>
+			1 = 1 and u.type is not null
+			<if test="dataAuth!=null and dataAuth!=''">
+				and ${dataAuth}
+			</if>
+			<if test="dataAuth1!=null and dataAuth1!=''">
+				and ${dataAuth1}
+			</if>
+			<if test="login_name != null and login_name != ''">
+				and u.login_name like '%${login_name}%'
+			</if>
+			<if test="real_name != null and real_name != ''">
+				and u.real_name like '%${real_name}%'
+			</if>
+			<if test="job_title != null and job_title != ''">
+				and u.job_title like '%${job_title}%'
+			</if>
+			<if test="mobile != null and mobile != ''">
+				and u.mobile like '%${mobile}%'
+			</if>
+			<if test="certificate_type_id != null and certificate_type_id != ''">
+				and u.certificate_type_id like '%${certificate_type_id}%'
+			</if>
+			<if test="certificate_no != null and certificate_no != ''">
+				and u.certificate_no like '%${certificate_no}%'
+			</if>
+			<if test="organization_name != null and organization_name != ''">
+				and org.name like '%${organization_name}%'
+			</if>
+			<if test="organization_type != null and organization_type != ''">
+				and org.type like '%${organization_type}%'
+			</if>
+			<if test="is_active != null and is_active != ''">
+				and u.is_active like '%${isActive}%'
+			</if>
+			<if test="start_date!=null and start_date!=''">
+				and u.created_time &gt;=#{start_date}
+			</if>
+			<if test="end_date!=null and end_date!=''">
+				and u.created_time &lt;=#{end_date}
+			</if>
+			<if test="role!=null and role !=''">
+				and r.id = #{role}
+			</if>
+		</where>
+
+	</select>
+	<!-- 获取所有不包括管理员的民警 -->
+	<select id="getUserInfonoJurisdiction" resultMap="userResultMap"
+			parameterType="java.util.Map">
+		SELECT
+		u.*, org.`name` organization_name,
+		xc.code_value certificate_name,
+		org.id AS organizationId,
+		org.p_id
+		FROM
+		xt_user u
+
+		LEFT JOIN xt_role r ON u.role_id = r.id
+		LEFT JOIN xt_organization org ON org.id = u.organization_id
+		LEFT JOIN xt_code xc ON xc.code_key= u.certificate_type_id
+		LEFT JOIN ba_area ia on ia.organization_id = org.id
+
+		WHERE
+		1 = 1
+		and u.type is not null
+		and u.real_name not like '%管理员%'
+		<if test="dataAuth !=null and dataAuth !=''">
+			and ${dataAuth}
+		</if>
+		<if test="login_name != null and login_name != ''">
+			and u.login_name like '%${login_name}%'
+		</if>
+		<if test="real_name != null and real_name != ''">
+			and u.real_name like '%${real_name}%'
+		</if>
+		<if test="job_title != null and job_title != ''">
+			and u.job_title like '%${job_title}%'
+		</if>
+		<if test="mobile != null and mobile != ''">
+			and u.mobile like '%${mobile}%'
+		</if>
+		<if test="certificate_type_id != null and certificate_type_id != ''">
+			and u.certificate_type_id like '%${certificate_type_id}%'
+		</if>
+		<if test="certificate_no != null and certificate_no != ''">
+			and u.certificate_no like '%${certificate_no}%'
+		</if>
+		<if test="organization_name != null and organization_name != ''">
+			and org.name like '%${organization_name}%'
+		</if>
+		<if test="organization_type != null and organization_type != ''">
+			and org.type like '%${organization_type}%'
+		</if>
+		<if test="is_active != null and is_active != ''">
+			and u.is_active like '%${isActive}%'
+		</if>
+		<if test="start_date!=null and start_date!=''">
+			and u.created_time &gt;=#{start_date}
+		</if>
+		<if test="end_date!=null and end_date!=''">
+			and u.created_time &lt;=#{end_date}
+		</if>
+		<if test="role!=null and role !=''">
+			and r.id = #{role}
+		</if>
+		GROUP BY u.id
+		order by created_time desc
+		limit ${pageStart},${rows}
+	</select>
+	<!-- 根据获取用户信息（不包括管理员）大小 -->
+	<select id="noJurisdictionCount" resultType="java.lang.Integer" parameterType="java.util.Map">
+		SELECT
+		count(DISTINCT(u.id)) count
+		FROM
+		xt_user u
+		LEFT JOIN xt_role r ON u.role_id = r.id
+		LEFT JOIN xt_organization org ON org.id = u.organization_id
+		LEFT JOIN xt_code xc ON xc.code_key= u.certificate_type_id
+		LEFT JOIN ba_area ia on ia.organization_id = org.id
+		<where>
+			1 = 1
+			and u.type is not null
+			and u.real_name not like '%管理员%'
+			<if test="dataAuth!=null and dataAuth!=''">
+				and ${dataAuth}
+			</if>
+			<if test="dataAuth1!=null and dataAuth1!=''">
+				and ${dataAuth1}
+			</if>
+			<if test="login_name != null and login_name != ''">
+				and u.login_name like '%${login_name}%'
+			</if>
+			<if test="real_name != null and real_name != ''">
+				and u.real_name like '%${real_name}%'
+			</if>
+			<if test="job_title != null and job_title != ''">
+				and u.job_title like '%${job_title}%'
+			</if>
+			<if test="mobile != null and mobile != ''">
+				and u.mobile like '%${mobile}%'
+			</if>
+			<if test="certificate_type_id != null and certificate_type_id != ''">
+				and u.certificate_type_id like '%${certificate_type_id}%'
+			</if>
+			<if test="certificate_no != null and certificate_no != ''">
+				and u.certificate_no like '%${certificate_no}%'
+			</if>
+			<if test="organization_name != null and organization_name != ''">
+				and org.name like '%${organization_name}%'
+			</if>
+			<if test="organization_type != null and organization_type != ''">
+				and org.type like '%${organization_type}%'
+			</if>
+			<if test="is_active != null and is_active != ''">
+				and u.is_active like '%${isActive}%'
+			</if>
+			<if test="start_date!=null and start_date!=''">
+				and u.created_time &gt;=#{start_date}
+			</if>
+			<if test="end_date!=null and end_date!=''">
+				and u.created_time &lt;=#{end_date}
+			</if>
+			<if test="role!=null and role !=''">
+				and r.id = #{role}
+			</if>
+		</where>
+
+	</select>
+	<!-- 插入用户 信息 -->
+	<insert id="insertUser" parameterType="com.exa.vuespringboot.entity.UserEntity"
+		useGeneratedKeys="true" keyProperty="id">
+		insert into xt_user (login_name, real_name,
+		job_title, password, mobile,
+		email,
+		certificate_type_id, certificate_no, sex,
+		is_active, description,identity, created_time,type,organization_id,role_id,op_pid,op_user_id)
+		values (#{loginName,jdbcType=VARCHAR}, #{realName,jdbcType=VARCHAR},
+		#{jobTitle,jdbcType=VARCHAR}, #{password,jdbcType=VARCHAR},
+		#{mobile,jdbcType=VARCHAR},
+		#{email,jdbcType=VARCHAR},
+		#{certificateTypeId,jdbcType=INTEGER}, #{certificateNo,jdbcType=VARCHAR}, #{sex,jdbcType=INTEGER},
+		#{isActive,jdbcType=INTEGER},
+		#{description,jdbcType=VARCHAR},#{identity,jdbcType=VARCHAR},now(),
+		#{type,jdbcType=INTEGER}, #{organizationId,jdbcType=INTEGER},
+		#{roleId,jdbcType=INTEGER},#{op_Pid,jdbcType=VARCHAR},#{op_User_Id,jdbcType=INTEGER})
+	</insert>
+	<!-- 根据id删除用户 -->
+	<delete id="deleteUserByID" parameterType="java.lang.Integer">
+		delete from xt_user
+		where id = #{id,jdbcType=INTEGER}
+	</delete>
+
+	<!-- 更新用户信息 -->
+	<update id="updateUserByID" parameterType="com.exa.vuespringboot.entity.UserEntity">
+		update xt_user
+		set login_name = #{loginName,jdbcType=VARCHAR},
+		real_name = #{realName,jdbcType=VARCHAR},
+		job_title = #{jobTitle,jdbcType=VARCHAR},
+		password = #{password,jdbcType=VARCHAR},
+		mobile = #{mobile,jdbcType=VARCHAR},
+		email = #{email,jdbcType=VARCHAR},
+		certificate_type_id = #{certificateTypeId,jdbcType=INTEGER},
+		certificate_no = #{certificateNo,jdbcType=VARCHAR},
+		sex = #{sex,jdbcType=INTEGER},
+		is_active = #{isActive,jdbcType=INTEGER},
+		description = #{description,jdbcType=VARCHAR},
+		identity = #{identity,jdbcType=VARCHAR},
+		type = #{type,jdbcType=INTEGER},
+		organization_id = #{organizationId,jdbcType=INTEGER},
+		role_id = #{roleId,jdbcType=INTEGER},
+		updated_time = now()
+		where id = #{id,jdbcType=INTEGER}
+	</update>
+	<!-- 更新用户信息 -->
+	<update id="updateUserRoles" parameterType="com.exa.vuespringboot.entity.UserEntity">
+		update xt_user
+		set
+		role_id = #{roleId,jdbcType=INTEGER},
+		updated_time = now()
+		where id = #{id,jdbcType=INTEGER}
+	</update>
+	
+	<!-- 柜门分配-分配用户 -->
+  <select id="searchAllUser" resultMap="userResultMap">
+    SELECT * FROM xt_user u
+    LEFT JOIN xt_organization o ON  u.organization_id = o.id
+    WHERE 1=1
+    <if test="jzgGmxxId != null and jzgGmxxId != ''">
+      and u.id not in (select user_id from jz_jzg_gx where jzg_gmxx_id=#{jzgGmxxId})
+    </if>
+    <if test="realName != null and realName != ''">
+      and	u.real_name like '%${realName}%'
+    </if>
+     <if test="organizationId != null and organizationId != ''">
+      and organization_id=${organizationId}
+    </if> 
+    <if test="dataAuth!=null and dataAuth!=''">
+      and ${dataAuth}
+    </if>
+  </select>
+  <!-- 根据卷宗柜柜门信息id查询用户 -->
+  <select id="searchAllUserByGmxxId" resultMap="userResultMap">
+    select * from xt_user u
+    where 1=1
+    <if test="jzgGmxxId != null and jzgGmxxId != ''">
+      and u.id in (select user_id from jz_jzg_gx where jzg_gmxx_id=#{jzgGmxxId})
+    </if>
+  </select>
+  
+  <!-- 根据证据号码查询用户w.xb-->
+   <select id="selectInfo" resultMap="userResultMap" parameterType="java.lang.String" >
+    select * from xt_user where certificate_no = #{certificateNo,jdbcType=VARCHAR}
+  </select>
+  
+  <!-- 修改警察电话 -->
+	<update id="updateMobileNo" parameterType="com.exa.vuespringboot.entity.UserEntity" >
+		update xt_user
+		<set>
+			<if test="mobile != null" >
+				mobile = #{mobile,jdbcType=VARCHAR},
+			</if>
+			updated_time = now(),
+		</set>
+		where id = #{id,jdbcType=INTEGER}
+	</update>
+
+	<!-- 根据certificateNo获取用户信息 -->
+	<select id="getUserByCertificateNo" resultMap="userResultMap" parameterType="java.lang.String" >
+    select xu.*,org.`name` organization_name
+    from xt_user xu
+    LEFT JOIN xt_organization org ON org.id = xu.organization_id
+    where xu.certificate_no = #{certificateNo,jdbcType=VARCHAR} and xu.certificate_type_id=191
+  </select>
+
+  <select id="queryUserNoById" parameterType="java.lang.Long"  resultMap="userResultMap">
+      SELECT u.certificate_no as certificateNo FROM `xt_user`u WHERE u.id =#{pid}
+  </select>
+
+	<!-- 根据id获取用户信息 -->
+	<select id="getUserByID" resultMap="userResultMap" parameterType="java.lang.Integer" >
+		select
+		<include refid="user_Column_List" />
+		from xt_user
+		where id = #{id,jdbcType=INTEGER}
+	</select>
+
+	<!-- 根据模糊查询获取用户信息 -->
+	<select id="getUsersByLike" resultMap="userResultMap" parameterType="java.util.Map">
+		SELECT
+		u.id,
+		u.login_name,
+		u.real_name,
+		u.job_title,
+		u. password,
+		u.mobile,
+		u.email,
+		u.certificate_type_id,
+		u.certificate_no,
+		u.sex,
+		u.is_active,
+		u.description,
+		u.created_time,
+		u.updated_time,
+		u.type,
+		ct.code_value certificate_name,
+		org.name AS organization_name
+		FROM
+		xt_user AS u
+		LEFT JOIN xt_code ct ON u.certificate_type_id = ct.code_key and ct.type = 'ZJZLID'
+		LEFT JOIN xt_organization AS org ON org.id = u.organization_id
+		LEFT JOIN ba_area ia  ON ia.organization_id = org.id
+		<where>
+			<if test="login_name != null and login_name != ''">
+				and u.login_name like '%${login_name}%'
+			</if>
+			<if test="real_name != null and real_name != ''">
+				and u.real_name like '%${real_name}%'
+			</if>
+			<if test="job_title != null and job_title != ''">
+				and u.job_title like '%${job_title}%'
+			</if>
+			<if test="mobile != null and mobile != ''">
+				and u.mobile like '%${mobile}%'
+			</if>
+			<if test="certificate_type_id != null and certificate_type_id != ''">
+				and u.certificate_type_id like '%${certificate_type_id}%'
+			</if>
+			<if test="certificate_no != null and certificate_no != ''">
+				and u.certificate_no like '%${certificate_no}%'
+			</if>
+			<if test="is_active != null and is_active != ''">
+				and u.is_active like '%${isActive}%'
+			</if>
+			<if test="start_date!=null and start_date!=''">
+				and u.created_time &gt;=#{start_date}
+			</if>
+			<if test="end_date!=null and end_date!=''">
+				and u.created_time &lt;=#{end_date}
+			</if>
+			<if test="type!=null and type!=''">
+				and u.type =#{type}
+			</if>
+			<if test="organization_name != null and organization_name !=''">
+				and org.name = #{organization_name}
+			</if>
+
+			<if test="dataAuth!=null and dataAuth!=''">
+				and ${dataAuth}
+			</if>
+		</where>
+		order by u.id desc
+		<if test="pageStart != null and rows != null">
+			limit ${pageStart},${rows}
+		</if>
+
+	</select>
+
+	<select id="getUsersByLikeCount" resultType="java.lang.Integer" parameterType="java.util.Map">
+
+		SELECT
+		count(1)
+		FROM
+		xt_user AS u
+		LEFT JOIN xt_code ct ON u.certificate_type_id = ct.code_key and ct.type = 'ZJZLID'
+		LEFT JOIN xt_organization AS org ON org.id = u.organization_id
+		LEFT JOIN ba_area ia  ON ia.organization_id = org.id
+		<where>
+			<if test="login_name != null and login_name != ''">
+				and u.login_name like '%${login_name}%'
+			</if>
+			<if test="real_name != null and real_name != ''">
+				and u.real_name like '%${real_name}%'
+			</if>
+			<if test="job_title != null and job_title != ''">
+				and u.job_title like '%${job_title}%'
+			</if>
+			<if test="mobile != null and mobile != ''">
+				and u.mobile like '%${mobile}%'
+			</if>
+			<if test="certificate_type_id != null and certificate_type_id != ''">
+				and u.certificate_type_id like '%${certificate_type_id}%'
+			</if>
+			<if test="certificate_no != null and certificate_no != ''">
+				and u.certificate_no like '%${certificate_no}%'
+			</if>
+			<if test="is_active != null and is_active != ''">
+				and u.is_active like '%${isActive}%'
+			</if>
+			<if test="start_date!=null and start_date!=''">
+				and u.created_time &gt;=#{start_date}
+			</if>
+			<if test="end_date!=null and end_date!=''">
+				and u.created_time &lt;=#{end_date}
+			</if>
+			<if test="type!=null and type!=''">
+				and u.type =#{type}
+			</if>
+			<if test="organization_name != null and organization_name !=''">
+				and org.name = #{organization_name}
+			</if>
+
+			<if test="dataAuth!=null and dataAuth!=''">
+				and ${dataAuth}
+			</if>
+		</where>
+		order by u.id desc
+
+	</select>
+
+	<!-- 根据获取协办民警信息（包含单位信息、证件信息） -->
+	<select id="getXbUserInfo" resultMap="userResultMap" parameterType="java.util.Map">
+		SELECT
+		u.*, org.`name` organization_name,
+		xc.code_value certificate_name,
+		org.id AS organizationId,
+		org.p_id
+		FROM
+		xt_user u
+
+		LEFT JOIN xt_role r ON u.role_id = r.id
+		LEFT JOIN xt_organization org ON org.id = u.organization_id
+		LEFT JOIN xt_code xc ON xc.code_key= u.certificate_type_id
+
+		WHERE
+		1 = 1
+		<if test="dataAuth!=null and dataAuth!=''">
+			and ${dataAuth}
+		</if>
+		<if test="login_name != null and login_name != ''">
+			and u.login_name like '%${login_name}%'
+		</if>
+		<if test="real_name != null and real_name != ''">
+			and u.real_name like '%${real_name}%'
+		</if>
+		<if test="job_title != null and job_title != ''">
+			and u.job_title like '%${job_title}%'
+		</if>
+		<if test="mobile != null and mobile != ''">
+			and u.mobile like '%${mobile}%'
+		</if>
+		<if test="certificate_type_id != null and certificate_type_id != ''">
+			and u.certificate_type_id like '%${certificate_type_id}%'
+		</if>
+		<if test="certificate_no != null and certificate_no != ''">
+			and u.certificate_no like '%${certificate_no}%'
+		</if>
+		<if test="organization_name != null and organization_name != ''">
+			and org.name like '%${organization_name}%'
+		</if>
+		<if test="organization_type != null and organization_type != ''">
+			and org.type like '%${organization_type}%'
+		</if>
+		<if test="is_active != null and is_active != ''">
+			and u.is_active like '%${isActive}%'
+		</if>
+		<if test="start_date!=null and start_date!=''">
+			and u.created_time &gt;=#{start_date}
+		</if>
+		<if test="end_date!=null and end_date!=''">
+			and u.created_time &lt;=#{end_date}
+		</if>
+		<if test="role!=null and role !=''">
+			and r.id = #{role}
+		</if>
+		GROUP BY u.id
+		order by created_time desc
+	</select>
+
+	<update id="updatePsw" parameterType="com.exa.vuespringboot.entity.UserEntity" >
+		update xt_user
+		<set >
+			<if test="newPwd != null" >
+				password = #{newPwd,jdbcType=VARCHAR},
+			</if>
+			<if test="updatedTime != null" >
+				updated_time = #{updatedTime,jdbcType=TIMESTAMP},
+			</if>
+		</set>
+		where id = #{id,jdbcType=INTEGER}
+	</update>
+</mapper>

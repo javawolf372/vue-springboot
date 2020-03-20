@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.exa.vuespringboot.dao.IOrganizationMapper">
+	<resultMap id="organizationResultMap"
+		type="OrganizationEntity">
+		<id column="id" property="id" jdbcType="INTEGER" />
+		<result column="name" property="name" jdbcType="VARCHAR" />
+		<result column="type" property="type" jdbcType="VARCHAR" />
+		<result column="address" property="address" jdbcType="VARCHAR" />
+		<result column="telephone" property="telephone" jdbcType="VARCHAR" />
+		<result column="postcode" property="postcode" jdbcType="VARCHAR" />
+		<result column="org_code" property="orgCode" jdbcType="VARCHAR" />
+		<result column="org_alias" property="orgAlias" jdbcType="VARCHAR" />
+		<result column="org_rep" property="orgRep" jdbcType="VARCHAR" />
+		<result column="org_status" property="orgStatus" />
+		<result column="created_time" property="createdTime" jdbcType="TIMESTAMP" />
+		<result column="updated_time" property="updatedTime" jdbcType="TIMESTAMP" />
+		<result column="parent_id" property="parentId" javaType="INTEGER" />
+		<result column="p_id" property="pid" />
+
+		<result column="region_code" property="regionCode" jdbcType="INTEGER" />
+		<result column="region_name" property="regionName" jdbcType="VARCHAR" />
+		<result column="pro_name" property="proName" jdbcType="VARCHAR" />
+
+		<result column="op_user_id" property="op_User_Id" jdbcType="INTEGER" />
+		<result column="op_pid" property="op_pid" jdbcType="VARCHAR" />
+	</resultMap>
+
+	<select id="load" resultMap="organizationResultMap"
+		parameterType="java.lang.Integer">
+		SELECT o.*
+		FROM xt_organization o
+		where o.id = #{id}
+	</select>
+
+	<select id="list" parameterType="java.util.Map" resultMap="organizationResultMap">
+		SELECT o.*,sj.name proName
+		FROM xt_organization o LEFT JOIN  xt_organization  sj ON  o.parent_id=  sj.id
+		<!-- LEFT JOIN xt_region r ON r.code=o.region_code -->
+		<where>
+			1=1
+			<if test="dataAuth != null and dataAuth != ''">
+				and ${dataAuth}
+			</if>
+			<if test="id!=null and id!=''">
+				and o.id like '%${id}%'
+			</if>
+			<if test="organization!=null and organization!=''">
+				and o.name like '%${organization}%'
+			</if>
+			<if test="type!=null and type!=''">
+				and o.type like '%${type}%'
+			</if>
+			<if test="address!=null and address!=''">
+				and o.address like '%${address}%'
+			</if>
+			<if test="telephone!=null and telephone!=''">
+				and o.telephone like '%${telephone}%'
+			</if>
+			<if test="postcode!=null and postcode!=''">
+				and o.postcode like '%${postcode}%'
+			</if>
+					order  by  id desc
+			<if test="pageStart != null and rows != null">
+				limit ${pageStart},${rows}
+			</if>
+		</where>
+
+	</select>
+
+	<select id="count" resultType="java.lang.Integer" parameterType="java.util.Map">
+		SELECT count(1)
+		FROM xt_organization o LEFT JOIN  xt_organization  sj ON  o.parent_id=  sj.id
+		<where>
+			1=1
+			<if test="dataAuth != null and dataAuth != ''">
+				and ${dataAuth}
+			</if>
+			<if test="id!=null and id!=''">
+				and o.id like '%${id}%'
+			</if>
+			<if test="organization!=null and organization!=''">
+				and o.name like '%${organization}%'
+			</if>
+			<if test="type!=null and type!=''">
+				and o.type like '%${type}%'
+			</if>
+			<if test="address!=null and address!=''">
+				and o.address like '%${address}%'
+			</if>
+			<if test="telephone!=null and telephone!=''">
+				and o.telephone like '%${telephone}%'
+			</if>
+			<if test="postcode!=null and postcode!=''">
+				and o.postcode like '%${postcode}%'
+			</if>
+		</where>
+	</select>
+
+	<insert id="insert" parameterType="OrganizationEntity"
+		useGeneratedKeys="true" keyProperty="id">
+		insert into xt_organization (name, type,
+		address, telephone, postcode,
+		created_time, updated_time,org_code,org_alias,org_rep,org_status,parent_id,op_user_id,op_pid)
+		values (#{name}, #{type},
+		#{address}, #{telephone}, #{postcode},
+		now(), now(), #{orgCode}, #{orgAlias}, #{orgRep},#{orgStatus},#{parentId},#{op_User_Id},#{op_pid})
+	</insert>
+	<select id="listByIds" parameterType="java.util.Map" resultMap="organizationResultMap">
+		SELECT o.*,
+		FROM xt_organization o
+		where o.id in
+		<foreach item="item" index="index" collection="ids" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+	</select>
+
+	<select id="listChild" resultMap="organizationResultMap"
+		parameterType="java.lang.Integer">
+		select * from xt_organization o where o.id in (select r.org_id from
+		r_organization r where r.parent_org_id = #{parentOrgId})
+	</select>
+
+	<update id="update" parameterType="OrganizationEntity">
+		update xt_organization
+		set name = #{name},
+		type = #{type},
+		address = #{address},
+		telephone = #{telephone},
+		postcode = #{postcode},
+		updated_time = now(),
+		org_code=#{orgCode},org_alias=#{orgAlias},
+		org_rep=#{orgRep},org_status=#{orgStatus},
+		parent_id=#{parentId},p_id=#{pid}
+		where id = #{id}
+	</update>
+	<update id="updateParentId" parameterType="OrganizationEntity">
+		update xt_organization
+		set 
+		parent_id=#{parentId},
+		p_id=#{pid}
+		where id = #{id}
+	</update>
+
+	<delete id="delete" parameterType="java.lang.Integer">
+		delete from xt_organization
+		where id = #{id}
+	</delete>
+
+	<select id="listChildOrg" resultMap="organizationResultMap"
+		parameterType="java.util.Map">
+		select o.* from xt_organization o
+		where o.parent_id=#{id}
+		<if test="nopage == null">
+			limit ${pageStart},${rows}
+		</if>
+
+	</select>
+
+	<select id="childCount" parameterType="java.util.Map"
+		resultType="java.lang.Integer">
+		select count(1) from xt_organization o
+		where o.parent_id=#{id}
+	</select>
+	<!-- 根据用户id获取组织 -->
+	<select id="getOrgByUserId" resultMap="organizationResultMap" parameterType="java.lang.Integer">
+		select a.* from xt_organization a,xt_user b where a.id=b.organization_id AND b.id =#{userId,jdbcType=INTEGER}
+	</select>
+	<!-- 根据用户id获取单位信息 -->
+	<select id="getOrganizationByUserId" resultMap="organizationResultMap" parameterType="java.lang.Integer">
+		select org.* from xt_organization org,xt_user u
+		where  org.id= u.organization_id AND u.id= #{userId,jdbcType=INTEGER}
+	</select>
+	<!-- 根据用户id获取单位信息 -->
+	<select id="getOrganizationByUserId2" resultMap="organizationResultMap" parameterType="java.lang.Integer">
+		select org.* from xt_organization org,xt_user u
+		where  org.id= u.organization_id AND u.id= #{userId,jdbcType=INTEGER}
+	</select>
+
+	<select id="listOrgByRegionCode" resultMap="organizationResultMap" parameterType="java.lang.Long" >
+          SELECT * FROM  xt_organization WHERE org_code=#{regionCode}
+  </select>
+</mapper>
