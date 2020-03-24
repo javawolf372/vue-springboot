@@ -4,6 +4,7 @@ import com.exa.vuespringboot.dao.IUserMapper;
 import com.exa.vuespringboot.entity.*;
 import com.exa.vuespringboot.service.IAuthorityService;
 import com.exa.vuespringboot.utils.JWTUtil;
+import com.exa.vuespringboot.utils.PowerCacheUtil;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -33,7 +34,7 @@ public class LoginController {
 			UserEntity userEntity = userMapper.getUserByLoginNameAndPassword(loginMap);
 			if (userEntity!=null){
 				Map<String, Object> data = new HashMap<>();
-				data.put("token", JWTUtil.createJWT(UUID.randomUUID().toString()));
+				data.put("token", JWTUtil.createJWT(UUID.randomUUID().toString(), userEntity.getId()));
 				data.put("menuData", listMenuByPidAndUserId(2l, userEntity.getId()));
 				return new ResponseResult(ResponseResult.SUCCESS_CODE, "sucess", data);
 			}else{
@@ -91,6 +92,7 @@ public class LoginController {
 		AuthorityEntity authorityEntity = authorityService.queryAuthorityById(pid);
 		Map<String, Object> result = new HashMap<>();
 		result.put("authInfo", authorityEntity);
+		result.put("buttons", authorityService.getUserAllButtonAutontity(userId, pid));
 		result.put("childAuth", value);
 		return result;
 	}

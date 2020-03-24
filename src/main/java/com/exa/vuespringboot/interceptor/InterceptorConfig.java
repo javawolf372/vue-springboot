@@ -15,8 +15,15 @@ public class InterceptorConfig implements WebMvcConfigurer{
             @Override
             public void addInterceptors(InterceptorRegistry registry) {
                 registry.addInterceptor(new LoginInterceptor());
+                registry.addInterceptor(getUserAuthorityInterceptor())
+                        .excludePathPatterns("/error");
             }
         };
     }
-	
+
+    //写方法是为了类里面使用@Resouce
+    @Bean
+    public UserAuthorityInterceptor getUserAuthorityInterceptor(){
+	    return new UserAuthorityInterceptor();
+    }
 }

@@ -20,24 +20,24 @@ public class JWTUtil {
 	
     /**
      * 签发JWT
-     * @param id
-     * @param subject 可以是JSON数据 尽可能少
-     * @param ttlMillis
+     * @param token
+     * @param userId
      * @return  String
      *
      */
-    public static String createJWT(String id) {
+    public static String createJWT(String token, Integer userId) {
         SignatureAlgorithm signatureAlgorithm = SignatureAlgorithm.HS256;
         long nowMillis = System.currentTimeMillis();
         Date now = new Date(nowMillis);
         SecretKey secretKey = generalKey();
         JwtBuilder builder = Jwts.builder()
-                .setId(id)
+                .setId(token)
                 .setSubject("")   // 主题
                 .setIssuer("wolf")     // 签发者
                 .setIssuedAt(now)      // 签发时间
                 .setExpiration(new Date(nowMillis+TIMEOUT_MILLIS)) //过期时间
-                .signWith(signatureAlgorithm, secretKey); // 签名算法以及密匙
+                .signWith(signatureAlgorithm, secretKey) // 签名算法以及密匙
+                .claim("userId", userId);
         return builder.compact();
     }
     /**

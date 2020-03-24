@@ -5,6 +5,7 @@ import com.exa.vuespringboot.entity.AreaEntity;
 import com.exa.vuespringboot.entity.AuthorityEntity;
 
 import java.util.List;
+import java.util.Set;
 
 public interface IAuthorityService {
     /**
@@ -23,6 +24,15 @@ public interface IAuthorityService {
      * @return
      */
     List<AuthorityEntity> getAuthorityDataById(long userid, long pid);
+
+    /**
+     * 通过用户id和父级id查询所有按钮权限
+     *
+     * @param userid
+     * @param pid
+     * @return
+     */
+    Set<Long> getUserAllButtonAutontity(long userid, long pid);
 
     /**
      * 根据id查询权限数据

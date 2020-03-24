@@ -5,17 +5,12 @@
     <resultMap id="authorityResultMap" type="com.exa.vuespringboot.entity.AuthorityEntity">
         <id property="id" column="ID"/>
         <result property="title" column="TITLE"/>
-        <result property="englishTitle" column="ENGLISH_TITLE"/>
-        <result property="description" column="DESCRIPTION"/>
         <result property="type" column="AUTHORITY_TYPE"/>
         <result property="parentId" column="PARENT_ID"/>
         <result property="rootId" column="ROOT_ID"/>
         <result property="sortNumber" column="SORT_NUMBER"/>
         <result property="url" column="URL"/>
-        <result property="jsMethod" column="JS_METHOD"/>
         <result property="icon" column="ICON"/>
-        <result property="bigIcon" column="big_icon"/>
-        <result property="smallIcon" column="small_icon"/>
         <result property="authorityId" column="id"/>
 
         <result property="moduleName"  column="module_name"></result>

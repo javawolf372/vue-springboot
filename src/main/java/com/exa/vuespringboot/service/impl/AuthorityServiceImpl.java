@@ -35,6 +35,11 @@ public class AuthorityServiceImpl implements IAuthorityService {
         return powerCacheUtil.getUserSysMenuAutontity(userid, pid);
     }
 
+    @Override
+    public Set<Long> getUserAllButtonAutontity(long userid, long pid) {
+        return powerCacheUtil.getUserAllButtonAutontity(userid, pid);
+    }
+
     /**
      * 通过权限id查询菜单权限
      *

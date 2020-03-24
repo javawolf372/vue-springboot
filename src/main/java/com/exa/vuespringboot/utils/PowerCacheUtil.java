@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
@@ -393,7 +394,17 @@ public class PowerCacheUtil implements ApplicationRunner,Runnable {
 	
 
 	}
-	
+
+	// 根据用户标识与系统权限标识，获取该系统下的所有按钮权限
+	public Set<Long> getUserAllButtonAutontity(Long userId, Long systemAuthId){
+		Set<Long> allButtonAutontity = new HashSet<>();
+		for (AuthorityEntity ae : getUserAuthorityById(userId)){
+			if((ae.getType()==3 || ae.getType()==4) && ae.getRootId()==systemAuthId){
+				allButtonAutontity.add(ae.getId());
+			}
+		}
+		return allButtonAutontity;
+	}
 
 
 	// 根据用户标识，获取所有url权限(按钮url和隐藏url)
