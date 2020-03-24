@@ -42,8 +42,8 @@
     </select>
 
 	<insert id="insert" parameterType="com.exa.vuespringboot.entity.DemoEntity" keyProperty="id" useGeneratedKeys="true">
-		insert into t_demo (`id`, `name`, `identity`, `birthday`, `hobby`, `sex`, `is_active`, `introduce`)
-        values (#{id,jdbcType=INTEGER}, #{name,jdbcType=VARCHAR}, #{identity,jdbcType=VARCHAR},
+		insert into t_demo (`name`, `identity`, `birthday`, `hobby`, `sex`, `is_active`, `introduce`)
+        values (#{name,jdbcType=VARCHAR}, #{identity,jdbcType=VARCHAR},
                 #{birthday,jdbcType=TIMESTAMP}, #{hobby,jdbcType=VARCHAR}, #{sex,jdbcType=INTEGER},
                 #{isActive,jdbcType=INTEGER}, #{introduce,jdbcType=VARCHAR})
 	</insert>
