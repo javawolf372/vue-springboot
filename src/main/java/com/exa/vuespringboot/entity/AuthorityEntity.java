@@ -58,12 +58,37 @@ public class AuthorityEntity implements java.io.Serializable,Cloneable {
 
 	private Set<Long> childIds=new HashSet<Long>();
 
+	public AuthorityEntity() {
+	}
+
+	public AuthorityEntity(Long id, Long parentId) {
+		this.id = id;
+		this.parentId = parentId;
+	}
+
 	@Override
 	public String toString() {
 		return "AuthorityEntity{" +
-				"moduleName='" + moduleName + '\'' +
+				"id=" + id +
+				", title='" + title + '\'' +
+				", englishTitle='" + englishTitle + '\'' +
+				", description='" + description + '\'' +
+				", type=" + type +
+				", parentId=" + parentId +
+				", rootId=" + rootId +
+				", sortNumber=" + sortNumber +
+				", url='" + url + '\'' +
+				", jsMethod='" + jsMethod + '\'' +
+				", icon='" + icon + '\'' +
+				", bigIcon='" + bigIcon + '\'' +
+				", smallIcon='" + smallIcon + '\'' +
+				", flag='" + flag + '\'' +
+				", authorityId=" + authorityId +
+				", children=" + children +
+				", moduleName='" + moduleName + '\'' +
 				", namespace='" + namespace + '\'' +
 				", imageName='" + imageName + '\'' +
+				", childIds=" + childIds +
 				'}';
 	}
 

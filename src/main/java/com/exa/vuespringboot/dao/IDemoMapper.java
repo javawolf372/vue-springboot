@@ -2,6 +2,7 @@ package com.exa.vuespringboot.dao;
 
 import com.exa.vuespringboot.entity.DemoEntity;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Results;
 
 import java.util.List;
 import java.util.Map;

@@ -4,24 +4,27 @@ import com.exa.vuespringboot.dao.IAreaMapper;
 import com.exa.vuespringboot.dao.IAuthorityMapper;
 import com.exa.vuespringboot.dao.IRoleMapper;
 import com.exa.vuespringboot.dao.IUserMapper;
-import com.exa.vuespringboot.entity.AreaEntity;
 import com.exa.vuespringboot.entity.AuthorityEntity;
 import com.exa.vuespringboot.entity.RoleAuthorityEntity;
 import com.exa.vuespringboot.entity.UserEntity;
+import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
-import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.Period;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.stream.Collectors;
 
 @Component
 public class PowerCacheUtil implements ApplicationRunner,Runnable {
@@ -60,51 +63,46 @@ public class PowerCacheUtil implements ApplicationRunner,Runnable {
 	// 所有系统权限(key: authorityId, value：权限集合)
 	private static Map<Long, AuthorityEntity> allAuthorityMap = null;
 
-	//所有办案中心
-	private static List<AreaEntity> allAreaList = null;
-
-	//最后更新时间map(key:项目名,value:time)
-	private static long lastLoadTime=0L;
-
 	public void loadCacheData() {
-		long statTime=System.currentTimeMillis();
-		logger.info("###################加载用户权限数据缓存(" + statTime + ")#####################");
+		Instant start = Instant.now();
 		loadAllAuthorityMap();
 		loadRoleAuthorityIdsMap();
 		loadUserRoleIdsMap();
-		loadAllArea();
-		lastLoadTime=System.currentTimeMillis();
-		logger.info("###################加载用户权限数据缓存 end all cost" + (System.currentTimeMillis()-statTime) + " ms#####################");
+		Instant end = Instant.now();
+		logger.info("###################加载用户权限数据缓存历时：("+ Duration.between(start, end).toMillis() +")#####################");
 		logger.info("user_RoleIdsMap size:"+user_RoleIdsMap.size());
 		logger.info("role_AuthorityIdsMap size:"+role_AuthorityIdsMap.size());
 		logger.info("allAuthorityMap size:"+allAuthorityMap.size());
 	}
 
-	private void loadAllArea() {
-		writeLock.lock();
-		try {
-			allAreaList = areaMapper.listAllArea(new HashMap<String, Object>());
-		} catch (Exception e) {
-			logger.error(e.getMessage(), e);
-		} finally {
-			writeLock.unlock();
-		}
-
-	}
-
 	private void loadAllAuthorityMap(){
-		long statTime=System.currentTimeMillis();
-		logger.info("--------------initAllAuthorityMap start(" + statTime + ")------------------------");
+		Instant start = Instant.now();
 		writeLock.lock();
 		try {
 			List<AuthorityEntity> authoritys = authorityMapper.listAuthority();
+/*  jdk7
 			allAuthorityMap=new HashMap<Long, AuthorityEntity>();
 			if(authoritys!=null){
 				for(AuthorityEntity authorityEntity:authoritys){
 					allAuthorityMap.put(authorityEntity.getId(), authorityEntity);
 				}
+			}*/
+			if(Objects.nonNull(authoritys)){
+				//将权限集合转为 key authorityId  value Authority对象的Map
+				allAuthorityMap = authoritys.stream().collect(Collectors.toMap(AuthorityEntity::getId, (a) -> a));
+				//将所有子权限加入父权限中
+				Map<Long, List<Long>> tempMap = authoritys.stream()
+														  .filter(a -> Objects.nonNull(a.getParentId()))
+														  .collect(Collectors.groupingBy(AuthorityEntity::getParentId,
+																                         Collectors.mapping(AuthorityEntity::getId,
+																					 		                Collectors.toList())));
+				allAuthorityMap.values().stream().forEach((a) -> {
+					if(Objects.nonNull(tempMap.get(a.getId()))){
+						a.setChildIds(new HashSet<>(tempMap.get(a.getId())));
+					}
+				});
 			}
-			//开始设置childIds (children作废)
+			/*jdk7
 			if(authoritys!=null){
 				for(AuthorityEntity authorityEntity:authoritys){
 					if(authorityEntity.getParentId()!=null){
@@ -114,24 +112,22 @@ public class PowerCacheUtil implements ApplicationRunner,Runnable {
 						}
 					}
 				}
-			}
+			}*/
 		} catch (Exception e) {
 			logger.error(e.getMessage(),e);
 		}finally{
 			writeLock.unlock();
 		}
-		logger.info("--------------initAllAuthorityMap end cost" + (System.currentTimeMillis()-statTime) + " ms------------------------");
+		Instant end = Instant.now();
+		logger.info("--------------initAllAuthorityMap end cost" + (Duration.between(start, end).toMillis()) + " ms------------------------");
 	}
-	
 
-	
-	//init role_AuthorityIdsMap
 	private void loadRoleAuthorityIdsMap(){
-		long statTime=System.currentTimeMillis();
-		logger.info("--------------initRoleAuthorityIdsMap start(" + statTime + ")------------------------");
+		Instant stat = Instant.now();
 		writeLock.lock();
 		try {
-			Collection<RoleAuthorityEntity>  roleAuthoritys=roleMapper.getAllRoleAuthority();
+			Collection<RoleAuthorityEntity>  roleAuthoritys = roleMapper.getAllRoleAuthority();
+			/* jdk7
 			role_AuthorityIdsMap=new HashMap<Long, List<Long>>();
 			if(roleAuthoritys!=null){
 				for(RoleAuthorityEntity roleAuthorityEntity:roleAuthoritys){
@@ -146,14 +142,19 @@ public class PowerCacheUtil implements ApplicationRunner,Runnable {
 					}
 					
 				}
-			}
+			}*/
+			if (Objects.nonNull(roleAuthoritys))
+				role_AuthorityIdsMap = roleAuthoritys.stream()
+													 .collect(Collectors.groupingBy(RoleAuthorityEntity::getRoleId,
+																					Collectors.mapping(RoleAuthorityEntity::getAuthorityId,
+																							           Collectors.toList())));
 		} catch (Exception e) {
 			e.printStackTrace();
 			logger.info(e.fillInStackTrace().toString());
 		}finally{
 			writeLock.unlock();
 		}
-		logger.info("--------------initRoleAuthorityIdsMap end cost" + (System.currentTimeMillis()-statTime) + " ms------------------------");
+		logger.info("--------initRoleAuthorityIdsMap end cost" + (Duration.between(stat, Instant.now()).toMillis()) + " ms------------------------");
 	}
 	
 	//init user_RoleIdsMap
@@ -194,16 +195,6 @@ public class PowerCacheUtil implements ApplicationRunner,Runnable {
 	}
 	
 
-	
-	private static boolean isLoad(){
-		if(lastLoadTime>=System.currentTimeMillis()-24*60*60*1000L){
-			return true;
-		}else{
-			return false;
-		}
-		
-	}
-	
 	/**
 	 * 异步方式刷新缓存
 	 */
@@ -216,11 +207,6 @@ public class PowerCacheUtil implements ApplicationRunner,Runnable {
 	public List<AuthorityEntity> getUserAuthorityById(Long userId) {
 		long statTime=System.currentTimeMillis();
 		logger.info("--------------getUserAuthorityById start(" + statTime + ")------------------------");
-		if(!isLoad()){
-			loadCacheData();
-		}
-		
-		
 		readLock.lock();
 		List<AuthorityEntity> authList=new ArrayList<AuthorityEntity>();
 		try {
@@ -460,18 +446,6 @@ public class PowerCacheUtil implements ApplicationRunner,Runnable {
 			readLock.unlock();
 		}
 		return userIds;
-	}
-	public List<AreaEntity> getAreaListByOrg(Integer orgId) {
-		List<AreaEntity> areaEntityList = new ArrayList<>();
-		if (allAreaList != null && allAreaList.size() != 0) {
-			for (AreaEntity areaEntity : allAreaList) {
-				if (areaEntity.getOrganizationId().intValue() == orgId.intValue()) {
-					areaEntityList.add(areaEntity);
-				}
-			}
-		}
-		return areaEntityList;
-
 	}
 
 	@Override
