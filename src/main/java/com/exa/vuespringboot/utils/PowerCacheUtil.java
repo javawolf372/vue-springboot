@@ -80,13 +80,6 @@ public class PowerCacheUtil implements ApplicationRunner,Runnable {
 		writeLock.lock();
 		try {
 			List<AuthorityEntity> authoritys = authorityMapper.listAuthority();
-/*  jdk7
-			allAuthorityMap=new HashMap<Long, AuthorityEntity>();
-			if(authoritys!=null){
-				for(AuthorityEntity authorityEntity:authoritys){
-					allAuthorityMap.put(authorityEntity.getId(), authorityEntity);
-				}
-			}*/
 			if(Objects.nonNull(authoritys)){
 				//将权限集合转为 key authorityId  value Authority对象的Map
 				allAuthorityMap = authoritys.stream().collect(Collectors.toMap(AuthorityEntity::getId, (a) -> a));
@@ -102,17 +95,6 @@ public class PowerCacheUtil implements ApplicationRunner,Runnable {
 					}
 				});
 			}
-			/*jdk7
-			if(authoritys!=null){
-				for(AuthorityEntity authorityEntity:authoritys){
-					if(authorityEntity.getParentId()!=null){
-						AuthorityEntity pAuthority=allAuthorityMap.get(authorityEntity.getParentId());
-						if(pAuthority!=null){
-							pAuthority.addChildId(authorityEntity.getId());
-						}
-					}
-				}
-			}*/
 		} catch (Exception e) {
 			logger.error(e.getMessage(),e);
 		}finally{
@@ -127,22 +109,6 @@ public class PowerCacheUtil implements ApplicationRunner,Runnable {
 		writeLock.lock();
 		try {
 			Collection<RoleAuthorityEntity>  roleAuthoritys = roleMapper.getAllRoleAuthority();
-			/* jdk7
-			role_AuthorityIdsMap=new HashMap<Long, List<Long>>();
-			if(roleAuthoritys!=null){
-				for(RoleAuthorityEntity roleAuthorityEntity:roleAuthoritys){
-					//因为2个值都是PK不用检查有效性
-					List<Long> aIds=role_AuthorityIdsMap.get(roleAuthorityEntity.getRoleId());
-					if(aIds!=null){
-						aIds.add(roleAuthorityEntity.getAuthorityId());
-					}else{
-						aIds=new ArrayList<Long>();
-						aIds.add(roleAuthorityEntity.getAuthorityId());
-						role_AuthorityIdsMap.put(roleAuthorityEntity.getRoleId(), aIds);
-					}
-					
-				}
-			}*/
 			if (Objects.nonNull(roleAuthoritys))
 				role_AuthorityIdsMap = roleAuthoritys.stream()
 													 .collect(Collectors.groupingBy(RoleAuthorityEntity::getRoleId,
